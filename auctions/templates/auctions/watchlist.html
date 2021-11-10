@@ -1,16 +1,17 @@
 {% extends 'auctions/layout.html' %}
 {% block body %}   
 {% for listing in listings %}
-<div>
-    <img src="{{listing.listing_image}}" width="30%">
-    <a href="{% url 'listing' listing.listing_id %}">{{listing.title}}</a>
+<a href="{% url 'listing' listing.listing_id %}">
+<div class="listing">
+    <img src="{{listing.listing_image}}" width="50%">
+    <h3>{{listing.title}}</h3>
     <form action="{% url 'watchlist' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" value="{{listing.title}}" name="delete">
-        <input type="submit" class="delete" value="delete">
+        <input type="submit" class="remove" value="remove">
     </form>
-</div>
+</div></a>
 {% empty %}
-<li>No listing</li>
+<li>No active watching listing</li>
 {% endfor %}
 {% endblock %}

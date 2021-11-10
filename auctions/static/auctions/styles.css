@@ -52,3 +52,13 @@ button:hover, input[type="submit"]:hover {
     top: 20px;
     right: 30px; 
 }
+.watchlist {
+    text-align: center;
+    padding: 12px;
+    border-radius: 6px;
+    background-color: cadetblue;
+}
+a > div {
+    text-decoration: none;
+    color: black;
+}

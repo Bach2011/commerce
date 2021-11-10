@@ -20,7 +20,10 @@ class Listing(models.Model):
         ("movies", "movies"),
         ("antique", "antique"),
         ("magical", "magical"),
-        ("rare item", "rare item")
+        ("rare item", "rare item"),
+        ("fashion", "fashion"),
+        ("toys", "toys"),
+        ("electronics", "electronics")
     ]
 
     title = models.CharField(max_length=64)

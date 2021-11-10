@@ -4,24 +4,26 @@
     <h2>Active Listings</h2>
     <br><hr>
     {% for listing in listings %}
+    <a href="{% url 'listing' listing.id %}">
     <div class="listing">
         <h4>{{listing.title}}</h4>
-        <img src="{{listing.image_url}}" width="50%" alt="No Image">
+        {% if listing.image_url %}
+        <img src="{{listing.image_url}}" width="50%">
+        {% endif %}
         <br>
+        <span>{{listing.description}}</span><br>
         <span>Current bid is <b>{{listing.current_bid}}$</b></span>
         <br>
-        {% if user.is_authenticated and  listing not in Watchlist %}
+        {% if user.is_authenticated %}
         <form action="{% url 'watchlist' %}" method="POST">
             {% csrf_token %}
             <input type="hidden" value="{{listing.title}}" name="watchlist">
-            <input type="submit" value="Add to watchlist">
+            <input type="submit" value="Watchlist">
         </form>
         {% elif user.is_authenticated == False %}
         <a href="{% url 'login' %}">Sigin to add to watchlist</a>
-        {% else %}
-        <a href="{% url 'watchlist'%}"><button>Watchlist</button></a>
         {% endif %}
-    </div>
+    </div></a>
     <br><br>
     {% empty %}
     <ul>

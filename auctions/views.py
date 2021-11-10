@@ -1,13 +1,13 @@
 from django import forms
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.forms.widgets import Textarea
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.forms import Form
 from .models import Bids, Comment, User, Listing, Watchlist
 from datetime import datetime
+from django.contrib.auth.decorators import login_required
 class CommentForm(forms.Form):
     comment = forms.CharField(widget=forms.Textarea(attrs={"name":"comment", "placeholder":"Comment something!","rows":"3"}), label="")
 
@@ -78,25 +78,38 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "auctions/register.html")
+@login_required
 def listing(request, listing_id):
     bid = str(request.POST.get('Bid'))
     close_listing = request.POST.get('close')
+    user = request.user.username
     listing = Listing.objects.get(pk=listing_id)
     if request.method == "POST" and bid == "None" and close_listing == None:
         form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.cleaned_data['comment']
-            Comment.objects.create(comment=comment, user=request.user.username, listing_id=listing_id)
+            Comment.objects.create(comment=comment, user=user, listing_id=listing_id)
     if request.method == "POST" and bid != "None":
         form = BidForm(request.POST)
         if form.is_valid():
             bid = form.cleaned_data['Bid']
             current_bid = Bids.objects.get(listing_id=listing_id)
-            current_bid.bid = bid
-            current_bid.username = request.user.username
-            current_bid.save()
+            if int(bid) > int(str(current_bid)):
+                current_bid.bid = bid
+                current_bid.username = user
+                current_bid.save()
+            else: 
+                return render(request, "auctions/listing.html", {
+                    "listing": listing,
+                    "comments": Comment.objects.filter(listing_id=listing_id),
+                    "bid_form": BidForm(),
+                    "comment_form": CommentForm(),
+                    "bid": Bids.objects.get(listing_id=listing_id),
+                    "message": "You need to bid larger than the current bid"
+                })
     if request.method == "POST" and close_listing != None:
         listing.active = False
+        Watchlist.objects.get(listing_id=listing_id, user=user).delete()
         listing.save()
         
     return render(request, "auctions/listing.html", {
@@ -106,11 +119,11 @@ def listing(request, listing_id):
         "comment_form": CommentForm(),
         "bid": Bids.objects.get(listing_id=listing_id)
     })
-
+@login_required
 def new(request):
     now = datetime.now()
     today = datetime.today()
-    current_time = today.strftime("%d %m, %Y") + now.strftime(" %H : %M : %S")
+    current_time = today.strftime("%d %m, %Y") + now.strftime(" %H:%M:%S")
     if request.method == "POST":
         form = NewListingForm(request.POST)
         if form.is_valid():
@@ -131,7 +144,6 @@ def new(request):
     return render(request, "auctions/new.html", {
         "form": NewListingForm
     })
-
 def categories(request):
     return render(request, "auctions/categories.html", {
         "categories": Listing.categories
@@ -141,19 +153,21 @@ def category(request, category):
     return render(request, "auctions/category.html", {
         "listings": Listing.objects.filter(category=category)
     })
-
+@login_required
 def watchlist(request):
     user = request.user.username
-    try:
-        delete_listing = request.POST.get('delete')
-        title = request.POST.get('watchlist')
-        if request.method == "POST" and title != None:
-            listing = Listing.objects.get(title=title)
+    delete_listing = request.POST.get('delete')
+    title = request.POST.get('watchlist')
+    if request.method == "POST" and title != None:
+        listing = Listing.objects.get(title=title)
+        try:
+            watchlist = Watchlist.objects.get(title=title, user=user)
+        except:
             Watchlist.objects.create(title=listing.title, user=user, listing_id=listing.id, listing_image=listing.image_url)
-        if request.method == "POST" and delete_listing != None:
-            Watchlist.objects.get(title=delete_listing, user=user).delete()
-        return render(request, "auctions/watchlist.html", {
-            "listings": Watchlist.objects.filter(user=user),
-        })
-    except IntegrityError:
         return HttpResponseRedirect(reverse('watchlist'))
+    if request.method == "POST" and delete_listing != None:
+        Watchlist.objects.get(title=delete_listing, user=user).delete()
+    return render(request, "auctions/watchlist.html", {
+        "listings": Watchlist.objects.filter(user=user),
+    })
+    

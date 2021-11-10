@@ -8,7 +8,7 @@
 </form>
 {% elif bid.username == user.username and listing.active == False%}
 <div class="alert alert-success" role="alert">
-  Congratulations! You won the {{listing.title}} with {{bid.bid}}$
+  Congratulations! You won the {{listing.title}} for {{bid.bid}}$
 </div>
 {% elif listing.user == user.username and listing.active == False %}
 <div class="alert alert-info" role="alert">
@@ -29,11 +29,15 @@ Current bid: {{listing.current_bid}}$
 {% if user.username != listing.user and listing.active %}
 <form action="{% url 'listing' listing.id %}" method="POST">
 {{bid_form}}
-{% if message %} {{message}} {% endif %}
 <br>
 {% csrf_token %}
 <input type="submit" value="Place bid">
-</form>
+</form><br>
+{% endif %}
+{% if message %}
+<div class="alert alert-warning" role="alert">
+  {{message}}
+</div> 
 {% endif %}
 <br>
 <h3>Details:</h3>
